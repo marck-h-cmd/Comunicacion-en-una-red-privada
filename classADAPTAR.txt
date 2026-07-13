@@ -1,0 +1,249 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO.Ports;
+using System.Threading;
+using System.Windows.Forms;
+
+
+
+namespace winProyComunicacion
+{
+    internal class ClassComunicacion
+    {
+        public SerialPort sPuerto;
+
+        public delegate void miManejador(string m);
+        public  event miManejador LlegoMensaje;
+
+
+        private Thread hebraEnvio;
+        private Thread procesoRecibirMensaje;
+    
+       
+    
+        private string MensajeRecibido;
+
+        private byte[] tramaMensajeEnvio;
+        private byte[] tramaEnvioBytes;
+        private byte[] tramaRecepcionMensaje;
+        private byte[] tramaCabacera;
+        private byte[] tramaEnvioArchivo;
+
+        // necesitamos abrir un archivo para leerlo y transmitirlo
+        // 
+        private FileStream FlujoLecturaArchivo;
+        private BinaryReader leyendoTramaArchivoEnvio;
+        private FileStream FlujoEscrituraArchivo;
+        private BinaryWriter EscribiendoTramaArchivoRecepcion;
+
+        private Thread procesoEnvioArchivo;
+
+        long tamañoArchivo;
+
+        long tamañoArchivoRecepcion;
+
+        long avanceRecepcionArchivo;
+
+
+        public ClassComunicacion()
+        {
+            hebraEnvio = new Thread(EnviandoMensaje);
+            procesoEnvioArchivo = new Thread(EscribiendoRecepcionArchivo);
+            MensajeRecibido = "";
+            sPuerto = new SerialPort();
+            tramaCabacera = new byte[5];
+            tramaEnvioBytes = new byte[1024];
+            tramaMensajeEnvio = new byte[1024];
+            tramaRecepcionMensaje = new byte[1024];
+            tramaEnvioArchivo = new byte[1024];
+        }
+
+        public void InicializaPuerto(string nombreP, int velocidad)
+        {
+            try
+            {
+                
+                sPuerto.DataReceived += SPuerto_DataReceived;
+
+                sPuerto.PortName = nombreP;
+                sPuerto.BaudRate = velocidad;
+                sPuerto.DataBits = 8;
+                sPuerto.StopBits = StopBits.Two;
+                sPuerto.Parity = Parity.Odd;
+                sPuerto.ReadBufferSize = 4096;
+                sPuerto.WriteBufferSize = 3072;
+                sPuerto.ReceivedBytesThreshold = 1024;
+                sPuerto.Open();
+
+
+
+                for (int i = 0; i < 1024; i++)
+                    tramaEnvioBytes[i] = 64;
+
+
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("ocurrio error");
+            }
+
+        }
+
+        public void inicioTransmisionArchivo1()
+        {
+            // iniciar una hebra de transmision que ejecute el proceso LeyendoTransmitiendoArchivo
+            tamañoArchivo = FlujoLecturaArchivo.Length;
+            procesoEnvioArchivo = new Thread(LeyendoTransmitiendoArchivo);
+            procesoEnvioArchivo.Start();
+        }
+
+        public void LeyendoTransmitiendoArchivo()
+        {
+            // complicado ASUMO QUE EL ARCHIVO ES MAYOR A 1024
+            // un buclecito
+            // no esta pensado para que se envien mensajes en paralelo
+            long avanceEnvio = 0;
+
+            while (tamañoArchivo - avanceEnvio >= 1019)
+            {
+                // leer archivo
+                tramaCabacera = ASCIIEncoding.UTF8.GetBytes("A" + "1019");
+                leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo,0,1019);
+                avanceEnvio += 1019;
+
+                // transmitir tramita
+                sPuerto.Write(tramaCabacera, 0, 5);
+                sPuerto.Write(tramaEnvioArchivo, 0, 1019);
+            }
+            tramaCabacera = ASCIIEncoding.UTF8.GetBytes("A"+Convert.ToInt16(tamañoArchivo-avanceEnvio).ToString()+"HHH");
+            leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo,0,Convert.ToInt16(tamañoArchivo-avanceEnvio));
+            
+            // transmitir tramita
+            sPuerto.Write(tramaCabacera, 0, 5);
+            sPuerto.Write(tramaEnvioArchivo, 0, Convert.ToInt16(tamañoArchivo - avanceEnvio));
+            sPuerto.Write(tramaEnvioBytes, 0, 1019 - Convert.ToInt16(tamañoArchivo - avanceEnvio));
+
+            avanceEnvio = avanceEnvio + Convert.ToInt16(tamañoArchivo - avanceEnvio);
+
+            leyendoTramaArchivoEnvio.Close();
+            FlujoLecturaArchivo.Close();
+        }
+        private void SPuerto_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            //hrow new NotImplementedException();
+            if (sPuerto.BytesToRead >= 1024)
+            {
+                sPuerto.Read(tramaRecepcionMensaje, 0, 1024);
+
+                string TAREA = ASCIIEncoding.UTF8.GetString(tramaRecepcionMensaje, 0, 1);
+
+                switch (TAREA)
+                {
+                    case "M":
+                        MessageBox.Show(ASCIIEncoding.UTF8.GetString(tramaRecepcionMensaje, 0, 5));
+                        procesoRecibirMensaje = new Thread(RecibiendoMensaje);
+                        procesoRecibirMensaje.Start();
+                        break;
+                    /* caso "AC" = "F" 
+                     * instanciar los flujo y binary de escritura = inicioConstruirArchivo
+                     * */
+                    case "A":
+                        //procesoConstruyeArchivo = new Thread(ConstruirArchivo);
+                        //.Start();
+                        //ConstruirArchivo();
+                        EscribiendoRecepcionArchivo();
+                        break;
+                    case "I":
+                        break;
+                    default:
+                        MessageBox.Show("trama no reconocida");
+                        break;
+                }
+
+            }
+
+
+        }
+
+        private void RecibiendoMensaje()
+        {
+            int longitudvedadera = Convert.ToInt16(ASCIIEncoding.UTF8.GetString(tramaRecepcionMensaje, 1, 4));
+            MensajeRecibido = ASCIIEncoding.UTF8.GetString(tramaRecepcionMensaje, 5, longitudvedadera);
+ 
+            // disparo evento
+            OnLlegomensaje(MensajeRecibido);
+        }
+
+
+
+        protected virtual void OnLlegomensaje(string m)
+        {
+            LlegoMensaje?.Invoke(m);
+
+        }
+
+        public void EnviarMensaje(string m)
+        {
+            tramaMensajeEnvio = ASCIIEncoding.UTF8.GetBytes(m);
+            string longitudMensaje;
+            longitudMensaje = "00000" + m.Length.ToString();
+            tramaCabacera = ASCIIEncoding.UTF8.GetBytes("M"+longitudMensaje.Substring(m.Length.ToString().Length+1, 4));
+
+            hebraEnvio = new Thread(EnviandoMensaje);
+            hebraEnvio.Start();
+         //   MessageBox.Show("cuando inicia el envio trama");
+        }
+        public void EnviandoMensaje()
+        {
+            int longitudmensaje = tramaMensajeEnvio.Length;
+            sPuerto.Write(tramaCabacera, 0, 5);
+            sPuerto.Write(tramaMensajeEnvio, 0, longitudmensaje);
+            sPuerto.Write(tramaEnvioBytes, 0, 1019 - longitudmensaje);
+
+          //  MessageBox.Show("concluyo el envio");
+        }
+
+        public void AbrirArchivo(string nombrecito)
+        {
+            try
+            {
+                FlujoLecturaArchivo = new FileStream("E:\\REDES1\\" + nombrecito, FileMode.Open, FileAccess.Read);
+
+                leyendoTramaArchivoEnvio = new BinaryReader(FlujoLecturaArchivo);
+                tamañoArchivo = FlujoLecturaArchivo.Length;
+                MessageBox.Show("SE ABRIO EL ARCHIVOOOOOOOOOOO Y SE CARGO PARA ENVIAR");
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("selecciona bien",e.Message.ToString());
+            }
+        }
+
+        public void CrearArchivo(string nombrecito,long TamañoArchivo)
+        {
+            FlujoEscrituraArchivo = new FileStream("E:\\REDES1\\" + nombrecito, FileMode.Create, FileAccess.Write);
+            EscribiendoTramaArchivoRecepcion = new BinaryWriter(FlujoEscrituraArchivo);
+            avanceRecepcionArchivo = 0;
+            tamañoArchivoRecepcion = TamañoArchivo;
+        }
+
+        public void EscribiendoRecepcionArchivo()
+        {
+            if(tamañoArchivoRecepcion - avanceRecepcionArchivo >= 1019)
+            {
+                avanceRecepcionArchivo += 1019;
+                EscribiendoTramaArchivoRecepcion.Write(tramaRecepcionMensaje, 5, 1019);
+            }
+            else
+            {
+                EscribiendoTramaArchivoRecepcion.Write(tramaRecepcionMensaje, 5, Convert.ToInt16(tamañoArchivoRecepcion - avanceRecepcionArchivo));
+                EscribiendoTramaArchivoRecepcion.Close();
+                FlujoEscrituraArchivo.Close();
+            }
+        }
+    }
+}
+
