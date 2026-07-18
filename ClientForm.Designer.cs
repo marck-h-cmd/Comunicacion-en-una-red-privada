@@ -29,6 +29,9 @@ namespace winProyComunicacion
         private System.Windows.Forms.Button _btnFile;
         private System.Windows.Forms.Panel pnlSpacer;
         private System.Windows.Forms.Button _btnSend;
+        private System.Windows.Forms.Panel pnlWelcome;
+        private System.Windows.Forms.Label lblWelcome;
+        private System.Windows.Forms.Label lblWelcomeSub;
 
         protected override void Dispose(bool disposing)
         {
@@ -51,6 +54,9 @@ namespace winProyComunicacion
             lblLocalPort = new Label();
             _split = new SplitContainer();
             _lstContactos = new ListBox();
+            pnlWelcome = new Panel();
+            lblWelcomeSub = new Label();
+            lblWelcome = new Label();
             _pnlChatHistory = new FlowLayoutPanel();
             pnlChatHeader = new Panel();
             pnlAvatarHeader = new Panel();
@@ -67,6 +73,7 @@ namespace winProyComunicacion
             _split.Panel1.SuspendLayout();
             _split.Panel2.SuspendLayout();
             _split.SuspendLayout();
+            pnlWelcome.SuspendLayout();
             pnlChatHeader.SuspendLayout();
             pnlBottom.SuspendLayout();
             pnlInputWrap.SuspendLayout();
@@ -84,25 +91,27 @@ namespace winProyComunicacion
             _pnlLogin.Controls.Add(lblLocalPort);
             _pnlLogin.Dock = DockStyle.Top;
             _pnlLogin.Location = new Point(0, 0);
+            _pnlLogin.Margin = new Padding(3, 4, 3, 4);
             _pnlLogin.Name = "_pnlLogin";
-            _pnlLogin.Size = new Size(900, 50);
+            _pnlLogin.Size = new Size(931, 67);
             _pnlLogin.TabIndex = 1;
             // 
             // lblIpTitle
             // 
             lblIpTitle.AutoSize = true;
             lblIpTitle.ForeColor = Color.White;
-            lblIpTitle.Location = new Point(10, 18);
+            lblIpTitle.Location = new Point(11, 24);
             lblIpTitle.Name = "lblIpTitle";
-            lblIpTitle.Size = new Size(20, 15);
+            lblIpTitle.Size = new Size(24, 20);
             lblIpTitle.TabIndex = 0;
             lblIpTitle.Text = "IP:";
             // 
             // _txtIp
             // 
-            _txtIp.Location = new Point(40, 15);
+            _txtIp.Location = new Point(46, 20);
+            _txtIp.Margin = new Padding(3, 4, 3, 4);
             _txtIp.Name = "_txtIp";
-            _txtIp.Size = new Size(100, 23);
+            _txtIp.Size = new Size(114, 27);
             _txtIp.TabIndex = 1;
             _txtIp.Text = "127.0.0.1";
             // 
@@ -110,26 +119,28 @@ namespace winProyComunicacion
             // 
             lblNombreTitle.AutoSize = true;
             lblNombreTitle.ForeColor = Color.White;
-            lblNombreTitle.Location = new Point(150, 18);
+            lblNombreTitle.Location = new Point(171, 24);
             lblNombreTitle.Name = "lblNombreTitle";
-            lblNombreTitle.Size = new Size(54, 15);
+            lblNombreTitle.Size = new Size(67, 20);
             lblNombreTitle.TabIndex = 2;
             lblNombreTitle.Text = "Nombre:";
             // 
             // _txtNombre
             // 
-            _txtNombre.Location = new Point(210, 15);
+            _txtNombre.Location = new Point(240, 20);
+            _txtNombre.Margin = new Padding(3, 4, 3, 4);
             _txtNombre.Name = "_txtNombre";
-            _txtNombre.Size = new Size(100, 23);
+            _txtNombre.Size = new Size(114, 27);
             _txtNombre.TabIndex = 3;
             // 
             // _btnConectar
             // 
             _btnConectar.BackColor = Color.White;
             _btnConectar.FlatStyle = FlatStyle.Flat;
-            _btnConectar.Location = new Point(320, 13);
+            _btnConectar.Location = new Point(366, 17);
+            _btnConectar.Margin = new Padding(3, 4, 3, 4);
             _btnConectar.Name = "_btnConectar";
-            _btnConectar.Size = new Size(75, 23);
+            _btnConectar.Size = new Size(86, 31);
             _btnConectar.TabIndex = 4;
             _btnConectar.Text = "Conectar";
             _btnConectar.UseVisualStyleBackColor = false;
@@ -139,9 +150,10 @@ namespace winProyComunicacion
             _btnNuevoGrupo.BackColor = Color.White;
             _btnNuevoGrupo.Enabled = false;
             _btnNuevoGrupo.FlatStyle = FlatStyle.Flat;
-            _btnNuevoGrupo.Location = new Point(410, 13);
+            _btnNuevoGrupo.Location = new Point(469, 17);
+            _btnNuevoGrupo.Margin = new Padding(3, 4, 3, 4);
             _btnNuevoGrupo.Name = "_btnNuevoGrupo";
-            _btnNuevoGrupo.Size = new Size(100, 23);
+            _btnNuevoGrupo.Size = new Size(114, 31);
             _btnNuevoGrupo.TabIndex = 6;
             _btnNuevoGrupo.Text = "Nuevo Grupo";
             _btnNuevoGrupo.UseVisualStyleBackColor = false;
@@ -150,16 +162,17 @@ namespace winProyComunicacion
             // 
             lblLocalPort.AutoSize = true;
             lblLocalPort.ForeColor = Color.White;
-            lblLocalPort.Location = new Point(530, 18);
+            lblLocalPort.Location = new Point(606, 24);
             lblLocalPort.Name = "lblLocalPort";
-            lblLocalPort.Size = new Size(0, 15);
+            lblLocalPort.Size = new Size(0, 20);
             lblLocalPort.TabIndex = 5;
             // 
             // _split
             // 
             _split.BackColor = Color.LightGray;
             _split.Dock = DockStyle.Fill;
-            _split.Location = new Point(0, 50);
+            _split.Location = new Point(0, 67);
+            _split.Margin = new Padding(3, 4, 3, 4);
             _split.Name = "_split";
             // 
             // _split.Panel1
@@ -168,11 +181,12 @@ namespace winProyComunicacion
             // 
             // _split.Panel2
             // 
+            _split.Panel2.Controls.Add(pnlWelcome);
             _split.Panel2.Controls.Add(_pnlChatHistory);
             _split.Panel2.Controls.Add(pnlChatHeader);
             _split.Panel2.Controls.Add(pnlBottom);
-            _split.Size = new Size(900, 600);
-            _split.SplitterDistance = 250;
+            _split.Size = new Size(931, 656);
+            _split.SplitterDistance = 257;
             _split.SplitterWidth = 1;
             _split.TabIndex = 0;
             // 
@@ -185,9 +199,44 @@ namespace winProyComunicacion
             _lstContactos.IntegralHeight = false;
             _lstContactos.ItemHeight = 70;
             _lstContactos.Location = new Point(0, 0);
+            _lstContactos.Margin = new Padding(3, 4, 3, 4);
             _lstContactos.Name = "_lstContactos";
-            _lstContactos.Size = new Size(250, 600);
+            _lstContactos.Size = new Size(257, 656);
             _lstContactos.TabIndex = 0;
+            // 
+            // pnlWelcome
+            // 
+            pnlWelcome.BackColor = Color.FromArgb(240, 240, 240);
+            pnlWelcome.Controls.Add(lblWelcomeSub);
+            pnlWelcome.Controls.Add(lblWelcome);
+            pnlWelcome.Dock = DockStyle.Fill;
+            pnlWelcome.Location = new Point(0, 80);
+            pnlWelcome.Name = "pnlWelcome";
+            pnlWelcome.Size = new Size(673, 471);
+            pnlWelcome.TabIndex = 3;
+            pnlWelcome.Visible = false;
+            // 
+            // lblWelcomeSub
+            // 
+            lblWelcomeSub.AutoSize = true;
+            lblWelcomeSub.Font = new Font("Segoe UI", 10F);
+            lblWelcomeSub.ForeColor = Color.FromArgb(150, 150, 150);
+            lblWelcomeSub.Location = new Point(100, 230);
+            lblWelcomeSub.Name = "lblWelcomeSub";
+            lblWelcomeSub.Size = new Size(373, 23);
+            lblWelcomeSub.TabIndex = 1;
+            lblWelcomeSub.Text = "Selecciona un contacto para empezar a chatear";
+            // 
+            // lblWelcome
+            // 
+            lblWelcome.AutoSize = true;
+            lblWelcome.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
+            lblWelcome.ForeColor = Color.FromArgb(100, 100, 100);
+            lblWelcome.Location = new Point(100, 180);
+            lblWelcome.Name = "lblWelcome";
+            lblWelcome.Size = new Size(371, 41);
+            lblWelcome.TabIndex = 0;
+            lblWelcome.Text = "Bienvenido a TatoText😊";
             // 
             // _pnlChatHistory
             // 
@@ -195,10 +244,11 @@ namespace winProyComunicacion
             _pnlChatHistory.BackColor = Color.FromArgb(240, 240, 240);
             _pnlChatHistory.Dock = DockStyle.Fill;
             _pnlChatHistory.FlowDirection = FlowDirection.TopDown;
-            _pnlChatHistory.Location = new Point(0, 60);
+            _pnlChatHistory.Location = new Point(0, 80);
+            _pnlChatHistory.Margin = new Padding(3, 4, 3, 4);
             _pnlChatHistory.Name = "_pnlChatHistory";
-            _pnlChatHistory.Padding = new Padding(20);
-            _pnlChatHistory.Size = new Size(649, 480);
+            _pnlChatHistory.Padding = new Padding(23, 27, 23, 27);
+            _pnlChatHistory.Size = new Size(673, 471);
             _pnlChatHistory.TabIndex = 0;
             _pnlChatHistory.WrapContents = false;
             // 
@@ -210,15 +260,17 @@ namespace winProyComunicacion
             pnlChatHeader.Controls.Add(_lblHeaderChatStatus);
             pnlChatHeader.Dock = DockStyle.Top;
             pnlChatHeader.Location = new Point(0, 0);
+            pnlChatHeader.Margin = new Padding(3, 4, 3, 4);
             pnlChatHeader.Name = "pnlChatHeader";
-            pnlChatHeader.Size = new Size(649, 60);
+            pnlChatHeader.Size = new Size(673, 80);
             pnlChatHeader.TabIndex = 1;
             // 
             // pnlAvatarHeader
             // 
-            pnlAvatarHeader.Location = new Point(10, 10);
+            pnlAvatarHeader.Location = new Point(11, 13);
+            pnlAvatarHeader.Margin = new Padding(3, 4, 3, 4);
             pnlAvatarHeader.Name = "pnlAvatarHeader";
-            pnlAvatarHeader.Size = new Size(40, 40);
+            pnlAvatarHeader.Size = new Size(46, 53);
             pnlAvatarHeader.TabIndex = 0;
             // 
             // _lblHeaderChatNombre
@@ -226,9 +278,9 @@ namespace winProyComunicacion
             _lblHeaderChatNombre.AutoSize = true;
             _lblHeaderChatNombre.Font = new Font("Segoe UI", 12F);
             _lblHeaderChatNombre.ForeColor = Color.White;
-            _lblHeaderChatNombre.Location = new Point(60, 12);
+            _lblHeaderChatNombre.Location = new Point(69, 16);
             _lblHeaderChatNombre.Name = "_lblHeaderChatNombre";
-            _lblHeaderChatNombre.Size = new Size(212, 21);
+            _lblHeaderChatNombre.Size = new Size(261, 28);
             _lblHeaderChatNombre.TabIndex = 1;
             _lblHeaderChatNombre.Text = "SELECCIONA UN CONTACTO";
             // 
@@ -237,9 +289,9 @@ namespace winProyComunicacion
             _lblHeaderChatStatus.AutoSize = true;
             _lblHeaderChatStatus.Font = new Font("Segoe UI", 9F);
             _lblHeaderChatStatus.ForeColor = Color.FromArgb(220, 220, 220);
-            _lblHeaderChatStatus.Location = new Point(60, 35);
+            _lblHeaderChatStatus.Location = new Point(69, 47);
             _lblHeaderChatStatus.Name = "_lblHeaderChatStatus";
-            _lblHeaderChatStatus.Size = new Size(0, 15);
+            _lblHeaderChatStatus.Size = new Size(0, 20);
             _lblHeaderChatStatus.TabIndex = 2;
             // 
             // pnlBottom
@@ -249,10 +301,11 @@ namespace winProyComunicacion
             pnlBottom.Controls.Add(pnlSpacer);
             pnlBottom.Controls.Add(_btnSend);
             pnlBottom.Dock = DockStyle.Bottom;
-            pnlBottom.Location = new Point(0, 540);
+            pnlBottom.Location = new Point(0, 551);
+            pnlBottom.Margin = new Padding(3, 4, 3, 4);
             pnlBottom.Name = "pnlBottom";
-            pnlBottom.Padding = new Padding(15);
-            pnlBottom.Size = new Size(649, 60);
+            pnlBottom.Padding = new Padding(17, 20, 17, 20);
+            pnlBottom.Size = new Size(673, 105);
             pnlBottom.TabIndex = 2;
             // 
             // pnlInputWrap
@@ -261,23 +314,30 @@ namespace winProyComunicacion
             pnlInputWrap.Controls.Add(_txtInput);
             pnlInputWrap.Controls.Add(_btnFile);
             pnlInputWrap.Dock = DockStyle.Fill;
-            pnlInputWrap.Location = new Point(15, 15);
+            pnlInputWrap.Location = new Point(17, 20);
+            pnlInputWrap.Margin = new Padding(3, 4, 3, 4);
             pnlInputWrap.Name = "pnlInputWrap";
-            pnlInputWrap.Padding = new Padding(5);
-            pnlInputWrap.Size = new Size(559, 30);
+            pnlInputWrap.Padding = new Padding(6, 7, 6, 7);
+            pnlInputWrap.Size = new Size(571, 65);
             pnlInputWrap.TabIndex = 0;
             // 
             // _txtInput
             // 
+            _txtInput.AcceptsReturn = true;
+            _txtInput.AcceptsTab = true;
             _txtInput.BorderStyle = BorderStyle.None;
             _txtInput.Dock = DockStyle.Fill;
             _txtInput.Font = new Font("Segoe UI", 12F);
             _txtInput.ForeColor = Color.Gray;
-            _txtInput.Location = new Point(45, 5);
+            _txtInput.Location = new Point(58, 7);
+            _txtInput.Margin = new Padding(3, 4, 3, 4);
+            _txtInput.Multiline = true;
             _txtInput.Name = "_txtInput";
-            _txtInput.Size = new Size(509, 22);
+            _txtInput.ScrollBars = ScrollBars.Vertical;
+            _txtInput.Size = new Size(507, 51);
             _txtInput.TabIndex = 0;
             _txtInput.Text = "Type a message...";
+            _txtInput.TextChanged += _txtInput_TextChanged;
             // 
             // _btnFile
             // 
@@ -287,9 +347,10 @@ namespace winProyComunicacion
             _btnFile.FlatStyle = FlatStyle.Flat;
             _btnFile.Font = new Font("Segoe UI", 14F);
             _btnFile.ForeColor = Color.Gray;
-            _btnFile.Location = new Point(5, 5);
+            _btnFile.Location = new Point(6, 7);
+            _btnFile.Margin = new Padding(3, 4, 3, 4);
             _btnFile.Name = "_btnFile";
-            _btnFile.Size = new Size(40, 20);
+            _btnFile.Size = new Size(52, 51);
             _btnFile.TabIndex = 1;
             _btnFile.Text = "📎";
             _btnFile.UseVisualStyleBackColor = false;
@@ -297,9 +358,10 @@ namespace winProyComunicacion
             // pnlSpacer
             // 
             pnlSpacer.Dock = DockStyle.Right;
-            pnlSpacer.Location = new Point(574, 15);
+            pnlSpacer.Location = new Point(588, 20);
+            pnlSpacer.Margin = new Padding(3, 4, 3, 4);
             pnlSpacer.Name = "pnlSpacer";
-            pnlSpacer.Size = new Size(10, 30);
+            pnlSpacer.Size = new Size(11, 65);
             pnlSpacer.TabIndex = 1;
             // 
             // _btnSend
@@ -311,22 +373,24 @@ namespace winProyComunicacion
             _btnSend.FlatStyle = FlatStyle.Flat;
             _btnSend.Font = new Font("Segoe UI", 16F);
             _btnSend.ForeColor = Color.White;
-            _btnSend.Location = new Point(584, 15);
+            _btnSend.Location = new Point(599, 20);
+            _btnSend.Margin = new Padding(3, 4, 3, 4);
             _btnSend.Name = "_btnSend";
-            _btnSend.Size = new Size(50, 30);
+            _btnSend.Size = new Size(57, 65);
             _btnSend.TabIndex = 2;
             _btnSend.Text = "➤";
             _btnSend.UseVisualStyleBackColor = false;
             // 
             // ClientForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(240, 240, 240);
-            ClientSize = new Size(900, 650);
+            ClientSize = new Size(931, 723);
             Controls.Add(_split);
             Controls.Add(_pnlLogin);
-            MinimumSize = new Size(600, 400);
+            Margin = new Padding(3, 4, 3, 4);
+            MinimumSize = new Size(683, 518);
             Name = "ClientForm";
             Text = "TCP IP CHAT CLIENT";
             _pnlLogin.ResumeLayout(false);
@@ -335,6 +399,8 @@ namespace winProyComunicacion
             _split.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)_split).EndInit();
             _split.ResumeLayout(false);
+            pnlWelcome.ResumeLayout(false);
+            pnlWelcome.PerformLayout();
             pnlChatHeader.ResumeLayout(false);
             pnlChatHeader.PerformLayout();
             pnlBottom.ResumeLayout(false);

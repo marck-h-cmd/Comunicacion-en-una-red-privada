@@ -279,7 +279,7 @@ namespace winProyComunicacion
         public event Action<int, string> ErrorTransferencia;
         public event Action<int> TransferenciaCancelada;
 
-        private const int DELAY_ENTRE_CHUNKS_MS = 40;
+        private const int DELAY_ENTRE_CHUNKS_MS = 0;
 
         public ClaseTransferenciaArchivo(int indice, Action<byte[], string> escribirTrama)
         {
@@ -292,14 +292,17 @@ namespace winProyComunicacion
             _escribirTrama = escribirTrama;
         }
 
-        private void EnviarTrama(byte[] cabecera, byte[] datos, byte[] padding)
+        private void EnviarTrama(byte[] cabecera, int datosLength)
         {
-            byte[] trama = new byte[1024];
-            int pos = 0;
-            Array.Copy(cabecera, 0, trama, pos, cabecera.Length); pos += cabecera.Length;
-            if (datos.Length > 0) { Array.Copy(datos, 0, trama, pos, datos.Length); pos += datos.Length; }
-            if (padding.Length > 0) { Array.Copy(padding, 0, trama, pos, padding.Length); }
-            _escribirTrama(trama, Destinatario);
+            // tramaEnvioArchivo already has the data in [5..5+datosLength]
+            // Fill the rest with '@'
+            for (int i = 5 + datosLength; i < 1024; i++)
+            {
+                tramaEnvioArchivo[i] = 64;
+            }
+            // Copy header to tramaEnvioArchivo
+            Array.Copy(cabecera, 0, tramaEnvioArchivo, 0, cabecera.Length);
+            _escribirTrama(tramaEnvioArchivo, Destinatario);
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -317,8 +320,7 @@ namespace winProyComunicacion
 
                 // Enviar trama de cancelación al receptor/emisor
                 byte[] cabC = Encoding.UTF8.GetBytes("C" + Indice + "000");
-                byte[] padC = CrearPadding(1019);
-                EnviarTrama(cabC, new byte[0], padC);
+                EnviarTrama(cabC, 0);
 
                 CerrarFlujos();
                 TransferenciaCancelada?.Invoke(Indice);
@@ -365,8 +367,8 @@ namespace winProyComunicacion
                 string anuncio = $"{NombreArchivo}|{TamañoArchivo}";
                 byte[] anuncioBytes = Encoding.UTF8.GetBytes(anuncio);
                 byte[] cabF = Encoding.UTF8.GetBytes("F" + Indice + "000");
-                byte[] padF = CrearPadding(1019 - anuncioBytes.Length);
-                EnviarTrama(cabF, anuncioBytes, padF);
+                Array.Copy(anuncioBytes, 0, tramaEnvioArchivo, 5, anuncioBytes.Length);
+                EnviarTrama(cabF, anuncioBytes.Length);
 
                 if (_cancelado) return;
 
@@ -378,11 +380,11 @@ namespace winProyComunicacion
                 {
                     if (_cancelado) break;
 
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 0, 1019);
+                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, 1019);
                     avanceEnvio += 1019;
                     BytesTransferidos = avanceEnvio;
 
-                    EnviarTrama(cabA, SubArray(tramaEnvioArchivo, 0, 1019), new byte[0]);
+                    EnviarTrama(cabA, 1019);
                     ProgresoArchivo?.Invoke(Indice, Progreso);
                     Thread.Sleep(DELAY_ENTRE_CHUNKS_MS);
                 }
@@ -396,11 +398,10 @@ namespace winProyComunicacion
                 // 3. Último trozo
                 int ultTam = (int)(TamañoArchivo - avanceEnvio);
                 if (ultTam > 0)
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 0, ultTam);
+                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, ultTam);
 
                 byte[] cabUlt = Encoding.UTF8.GetBytes("A" + Indice + "000");
-                byte[] padUlt = CrearPadding(1019 - ultTam);
-                EnviarTrama(cabUlt, SubArray(tramaEnvioArchivo, 0, ultTam), padUlt);
+                EnviarTrama(cabUlt, ultTam);
 
                 BytesTransferidos += ultTam;
                 Estado = EstadoTransferencia.Completado;
@@ -443,8 +444,8 @@ namespace winProyComunicacion
                         string reanudacion = $"{NombreArchivo}|{BytesTransferidos}";
                         byte[] reanudacionBytes = Encoding.UTF8.GetBytes(reanudacion);
                         byte[] cabR = Encoding.UTF8.GetBytes("R" + Indice + "000");
-                        byte[] padR = CrearPadding(1019 - reanudacionBytes.Length);
-                        EnviarTrama(cabR, reanudacionBytes, padR);
+                        Array.Copy(reanudacionBytes, 0, tramaEnvioArchivo, 5, reanudacionBytes.Length);
+                        EnviarTrama(cabR, reanudacionBytes.Length);
                     }
 
                     ProcesoEnvioArchivo = new Thread(LeyendoTransmitiendoArchivoReanudado) { IsBackground = true };
@@ -470,11 +471,11 @@ namespace winProyComunicacion
                 {
                     if (_cancelado) break;
 
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 0, 1019);
+                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, 1019);
                     avanceEnvio += 1019;
                     BytesTransferidos = avanceEnvio;
 
-                    EnviarTrama(cabA, SubArray(tramaEnvioArchivo, 0, 1019), new byte[0]);
+                    EnviarTrama(cabA, 1019);
                     ProgresoArchivo?.Invoke(Indice, Progreso);
                     Thread.Sleep(DELAY_ENTRE_CHUNKS_MS);
                 }
@@ -487,11 +488,10 @@ namespace winProyComunicacion
 
                 int ultTam = (int)(TamañoArchivo - avanceEnvio);
                 if (ultTam > 0)
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 0, ultTam);
+                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, ultTam);
 
                 byte[] cabUlt = Encoding.UTF8.GetBytes("A" + Indice + "000");
-                byte[] padUlt = CrearPadding(1019 - ultTam);
-                EnviarTrama(cabUlt, SubArray(tramaEnvioArchivo, 0, ultTam), padUlt);
+                EnviarTrama(cabUlt, ultTam);
 
                 BytesTransferidos += ultTam;
                 Estado = EstadoTransferencia.Completado;
@@ -516,8 +516,8 @@ namespace winProyComunicacion
                 string reanudacion = $"{NombreArchivo}|{BytesTransferidos}";
                 byte[] reanudacionBytes = Encoding.UTF8.GetBytes(reanudacion);
                 byte[] cabR = Encoding.UTF8.GetBytes("R" + Indice + "000");
-                byte[] padR = CrearPadding(1019 - reanudacionBytes.Length);
-                EnviarTrama(cabR, reanudacionBytes, padR);
+                Array.Copy(reanudacionBytes, 0, tramaEnvioArchivo, 5, reanudacionBytes.Length);
+                EnviarTrama(cabR, reanudacionBytes.Length);
 
                 ReanudarRecepcion(BytesTransferidos);
             }
@@ -626,21 +626,6 @@ namespace winProyComunicacion
         // ════════════════════════════════════════════════════════════════════
         //  UTILIDADES
         // ════════════════════════════════════════════════════════════════════
-
-        private byte[] CrearPadding(int length)
-        {
-            if (length <= 0) return new byte[0];
-            byte[] pad = new byte[length];
-            for (int i = 0; i < length; i++) pad[i] = 64; // '@'
-            return pad;
-        }
-
-        private byte[] SubArray(byte[] source, int index, int length)
-        {
-            byte[] dest = new byte[length];
-            Array.Copy(source, index, dest, 0, length);
-            return dest;
-        }
 
         private void CerrarFlujos()
         {

@@ -46,10 +46,11 @@ namespace winProyComunicacion
         private readonly Queue<TramaEnrutada> _colaBajaPrioridad = new Queue<TramaEnrutada>();
         private readonly object _lockColas = new object();
         private readonly SemaphoreSlim _semColas = new SemaphoreSlim(0);
+        private readonly SemaphoreSlim _semLimiteColaBaja = new SemaphoreSlim(100, 100); // Máximo 100 frames en cola baja
         private Thread _hiloDespacho;
         private volatile bool _despachando = false;
 
-        private const int DELAY_DESPACHO_MS = 10;
+        private const int DELAY_DESPACHO_MS = 0;
 
         public ClassComunicacion()
         {
@@ -327,10 +328,24 @@ namespace winProyComunicacion
                 if (!_despachando) break;
 
                 TramaEnrutada envio = null;
+                bool esBajaPrioridad = false;
                 lock (_lockColas)
                 {
-                    if (_colaMensajes.Count > 0) envio = _colaMensajes.Dequeue();
-                    else if (_colaBajaPrioridad.Count > 0) envio = _colaBajaPrioridad.Dequeue();
+                    if (_colaMensajes.Count > 0) 
+                    {
+                        envio = _colaMensajes.Dequeue();
+                        esBajaPrioridad = false;
+                    }
+                    else if (_colaBajaPrioridad.Count > 0) 
+                    {
+                        envio = _colaBajaPrioridad.Dequeue();
+                        esBajaPrioridad = true;
+                    }
+                }
+
+                if (esBajaPrioridad)
+                {
+                    _semLimiteColaBaja.Release(); // Liberar slot cuando decolamos frame de baja prioridad
                 }
                 if (envio == null) continue;
 
@@ -364,6 +379,7 @@ namespace winProyComunicacion
 
         public void EncolarBajaPrioridad(byte[] trama, string destinatario)
         {
+            _semLimiteColaBaja.Wait(); // Esperar hasta que haya espacio en la cola
             lock (_lockColas) { _colaBajaPrioridad.Enqueue(new TramaEnrutada { Trama1024 = trama, Destinatario = destinatario }); }
             _semColas.Release();
         }
@@ -408,6 +424,7 @@ namespace winProyComunicacion
         public string MostrarComo { get; set; } = string.Empty;
         public bool EsGrupo { get; set; } = false;
         public List<string>? Miembros { get; set; } = null;
+        public int UnreadCount { get; set; } = 0; // Contador de mensajes no leídos
         public override string ToString() => MostrarComo;
     }
 }
