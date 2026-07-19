@@ -116,6 +116,18 @@ namespace winProyComunicacion
             _enlace.GestorArchivos.TransferenciaCompletada += Enlace_TransferenciaCompletada;
             _enlace.NombreUsuarioRecibido += Enlace_NombreUsuarioRecibido;
             _enlace.GrupoRecibido += Enlace_GrupoRecibido;
+            _enlace.ServidorEncontrado += async (serverIp) =>
+            {
+                Invoke(async () =>
+                {
+                    if (!_enlace.IsConnected)
+                    {
+                        _txtIp.Text = serverIp;
+                        BtnConectar_Click(this, EventArgs.Empty);
+                    }
+                });
+            };
+            _enlace.StartDiscovery();
 
             // Inicializar Timer para animación de carga
             _cargaTimer = new System.Windows.Forms.Timer();

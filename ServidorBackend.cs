@@ -17,6 +17,8 @@ namespace winProyComunicacion
         private bool _ejecutando;
         private readonly ConcurrentDictionary<string, ManejadorCliente> _clientes = new ConcurrentDictionary<string, ManejadorCliente>();
         private readonly GestorGrupos _gestorGrupos = new GestorGrupos();
+        private UdpClient _udpBroadcaster;
+        private CancellationTokenSource _ctsBroadcaster;
 
         public event Action<List<string>> ListaClientesActualizada;
         public event Action<string> LogEvent;
@@ -29,6 +31,40 @@ namespace winProyComunicacion
                 _listener.Start();
                 _ejecutando = true;
                 LogEvent?.Invoke($"Servidor iniciado en el puerto {puerto}. Escuchando conexiones...");
+
+                // Start UDP broadcast thread
+                _ctsBroadcaster = new CancellationTokenSource();
+                _udpBroadcaster = new UdpClient();
+                _udpBroadcaster.EnableBroadcast = true;
+                _ = Task.Run(async () =>
+                {
+                    while (!_ctsBroadcaster.Token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            // Get all local IP addresses
+                            var localIps = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+                                .Where(nic => nic.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+                                               !nic.Description.ToLower().Contains("virtual") &&
+                                               !nic.Description.ToLower().Contains("loopback"))
+                                .SelectMany(nic => nic.GetIPProperties().UnicastAddresses)
+                                .Where(ip => ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                                .Select(ip => ip.Address);
+
+                            foreach (var ip in localIps)
+                            {
+                                byte[] broadcastMsg = System.Text.Encoding.UTF8.GetBytes($"TATO_SERVER:{ip}:{puerto}");
+                                IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, 8001);
+                                await _udpBroadcaster.SendAsync(broadcastMsg, broadcastMsg.Length, broadcastEndPoint);
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore errors
+                        }
+                        await Task.Delay(1000, _ctsBroadcaster.Token); // Broadcast every 1 second
+                    }
+                }, _ctsBroadcaster.Token);
 
                 while (_ejecutando)
                 {
@@ -50,6 +86,8 @@ namespace winProyComunicacion
         {
             _ejecutando = false;
             _listener?.Stop();
+            _ctsBroadcaster?.Cancel();
+            _udpBroadcaster?.Close();
             foreach (var kvp in _clientes)
             {
                 kvp.Value.Desconectar();

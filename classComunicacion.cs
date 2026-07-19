@@ -22,6 +22,7 @@ namespace winProyComunicacion
         private NetworkStream _stream;
 
         public event Action<string, string> LlegoMensaje;
+        public event Action<string>? ServidorEncontrado; // New event: server IP found
 
         public event Action<string> NombreUsuarioRecibido;
         // Evento para cuando el servidor manda la lista de usuarios (trama 'L')
@@ -32,6 +33,8 @@ namespace winProyComunicacion
 
         private string MensajeRecibido;
         private StringBuilder mensajeRecibidoCompleto;
+        private UdpClient? _udpListener;
+        private CancellationTokenSource? _ctsListener;
 
         // ════════════════════════════════════════════════════════════════════
         //  RECEPCIÓN
@@ -98,8 +101,50 @@ namespace winProyComunicacion
             return "";
         }
 
+        public void StartDiscovery()
+        {
+            if (_udpListener != null) return;
+
+            _ctsListener = new CancellationTokenSource();
+            _udpListener = new UdpClient(8001);
+            _udpListener.EnableBroadcast = true;
+
+            _ = Task.Run(async () =>
+            {
+                while (!_ctsListener.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        UdpReceiveResult result = await _udpListener.ReceiveAsync();
+                        string msg = System.Text.Encoding.UTF8.GetString(result.Buffer);
+                        if (msg.StartsWith("TATO_SERVER:"))
+                        {
+                            string[] parts = msg.Split(':');
+                            if (parts.Length >= 3)
+                            {
+                                string serverIp = parts[1];
+                                ServidorEncontrado?.Invoke(serverIp);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore errors
+                    }
+                }
+            }, _ctsListener.Token);
+        }
+
+        public void StopDiscovery()
+        {
+            _ctsListener?.Cancel();
+            _udpListener?.Close();
+            _udpListener = null;
+        }
+
         public void CerrarConexion()
         {
+            StopDiscovery();
             DetenerDespachador();
             DetenerHiloRx();
             GestorArchivos?.DetenerTodas();
