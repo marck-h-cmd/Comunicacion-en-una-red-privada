@@ -396,7 +396,13 @@ namespace winProyComunicacion
             string msg = _txtInput.Text;
             if (string.IsNullOrEmpty(msg) || msg == "Type a message...") return;
 
-            _enlace.enviarMensaje(msg, _contactoSeleccionado);
+            if (msg.Length > 4000)
+            {
+                MessageBox.Show("El mensaje excedió la longitud máxima permitida de 4000 caracteres.", "Mensaje Demasiado Largo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            _enlace.GestorChat.EnviarMensaje(msg, _contactoSeleccionado);
             AgregarBurbuja(msg, DateTime.Now.ToString("HH:mm"), true, _contactoSeleccionado, false, null);
             _txtInput.Clear();
         }
@@ -553,9 +559,24 @@ namespace winProyComunicacion
                 // Usar el nombre de archivo final para la burbuja de chat y el log
                 string nombreFinal = Path.GetFileName(rutaLocal);
 
-                // Primero agregamos la burbuja de archivo directamente
                 var (esGrupo, idGrupo, remitenteReal) = ParsearRemitente(remitente);
                 string contactoAsociado = esGrupo ? "GRUPO:" + idGrupo : remitente;
+
+                // Notificación visual de archivo recibido si no estamos en su chat
+                if (contactoAsociado != _contactoSeleccionado)
+                {
+                    foreach (ContactoItem item in _lstContactos.Items)
+                    {
+                        if (item.Nombre == contactoAsociado)
+                        {
+                            item.UnreadCount++;
+                            break;
+                        }
+                    }
+                    _lstContactos.Invalidate(); // Redibujar lista
+                }
+
+                // Primero agregamos la burbuja de archivo directamente
                 AgregarBurbuja("", DateTime.Now.ToString("HH:mm"), false, contactoAsociado, true, rutaLocal, remitenteReal, false);
 
                 // Guardamos la referencia a la burbuja para actualizarla después
