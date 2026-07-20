@@ -105,6 +105,7 @@ namespace winProyComunicacion
             lblIpTitle.Size = new Size(24, 20);
             lblIpTitle.TabIndex = 0;
             lblIpTitle.Text = "IP:";
+            lblIpTitle.Visible = false;
             // 
             // _txtIp
             // 
@@ -114,12 +115,13 @@ namespace winProyComunicacion
             _txtIp.Size = new Size(114, 27);
             _txtIp.TabIndex = 1;
             _txtIp.Text = "127.0.0.1";
+            _txtIp.Visible = false;
             // 
             // lblNombreTitle
             // 
             lblNombreTitle.AutoSize = true;
             lblNombreTitle.ForeColor = Color.White;
-            lblNombreTitle.Location = new Point(171, 24);
+            lblNombreTitle.Location = new Point(11, 24);
             lblNombreTitle.Name = "lblNombreTitle";
             lblNombreTitle.Size = new Size(67, 20);
             lblNombreTitle.TabIndex = 2;
@@ -127,7 +129,7 @@ namespace winProyComunicacion
             // 
             // _txtNombre
             // 
-            _txtNombre.Location = new Point(240, 20);
+            _txtNombre.Location = new Point(84, 20);
             _txtNombre.Margin = new Padding(3, 4, 3, 4);
             _txtNombre.Name = "_txtNombre";
             _txtNombre.Size = new Size(114, 27);
@@ -137,7 +139,7 @@ namespace winProyComunicacion
             // 
             _btnConectar.BackColor = Color.White;
             _btnConectar.FlatStyle = FlatStyle.Flat;
-            _btnConectar.Location = new Point(366, 17);
+            _btnConectar.Location = new Point(210, 17);
             _btnConectar.Margin = new Padding(3, 4, 3, 4);
             _btnConectar.Name = "_btnConectar";
             _btnConectar.Size = new Size(86, 31);
@@ -150,7 +152,7 @@ namespace winProyComunicacion
             _btnNuevoGrupo.BackColor = Color.White;
             _btnNuevoGrupo.Enabled = false;
             _btnNuevoGrupo.FlatStyle = FlatStyle.Flat;
-            _btnNuevoGrupo.Location = new Point(469, 17);
+            _btnNuevoGrupo.Location = new Point(313, 17);
             _btnNuevoGrupo.Margin = new Padding(3, 4, 3, 4);
             _btnNuevoGrupo.Name = "_btnNuevoGrupo";
             _btnNuevoGrupo.Size = new Size(114, 31);
@@ -162,7 +164,7 @@ namespace winProyComunicacion
             // 
             lblLocalPort.AutoSize = true;
             lblLocalPort.ForeColor = Color.White;
-            lblLocalPort.Location = new Point(606, 24);
+            lblLocalPort.Location = new Point(446, 24);
             lblLocalPort.Name = "lblLocalPort";
             lblLocalPort.Size = new Size(0, 20);
             lblLocalPort.TabIndex = 5;

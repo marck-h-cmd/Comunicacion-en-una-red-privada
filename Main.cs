@@ -135,8 +135,6 @@ namespace winProyComunicacion
 
         private void BtnClient_Click(object sender, EventArgs e)
         {
-            this.Hide();
-            
             string nombreInicial = "";
             string rutaConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TatoText", "config.json");
             try {
@@ -150,9 +148,47 @@ namespace winProyComunicacion
                 }
             } catch { }
 
-            ClientForm f = new ClientForm(nombreInicial);
-            f.FormClosed += (s, args) => this.Close();
-            f.Show();
+            // Show a name input dialog
+            Form inputForm = new Form()
+            {
+                Width = 300,
+                Height = 150,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Ingresa tu nombre",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Label label = new Label() { Left = 20, Top = 20, Text = "Tu nombre:" };
+            TextBox textBox = new TextBox() { Left = 20, Top = 50, Width = 240, Text = nombreInicial };
+            Button confirmBtn = new Button() { Text = "Ok", Left = 90, Width = 100, Top = 80, DialogResult = DialogResult.OK };
+            confirmBtn.Click += (s, e) => { inputForm.Close(); };
+            inputForm.Controls.Add(label);
+            inputForm.Controls.Add(textBox);
+            inputForm.Controls.Add(confirmBtn);
+            inputForm.AcceptButton = confirmBtn;
+            if (inputForm.ShowDialog() == DialogResult.OK)
+            {
+                nombreInicial = textBox.Text.Trim();
+                if (!string.IsNullOrEmpty(nombreInicial))
+                {
+                    // Save the name to config
+                    try
+                    {
+                        string configDir = Path.GetDirectoryName(rutaConfig);
+                        if (!Directory.Exists(configDir)) Directory.CreateDirectory(configDir);
+                        string json = $"{{\"NombreUsuario\":\"{nombreInicial.Replace("\"", "\\\"")}\"}}";
+                        File.WriteAllText(rutaConfig, json);
+                    }
+                    catch { }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(nombreInicial))
+            {
+                this.Hide();
+                ClientForm f = new ClientForm(nombreInicial);
+                f.FormClosed += (s, args) => this.Close();
+                f.Show();
+            }
         }
     }
 

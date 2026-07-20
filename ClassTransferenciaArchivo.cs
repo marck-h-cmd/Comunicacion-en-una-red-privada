@@ -281,6 +281,21 @@ namespace winProyComunicacion
 
         private const int DELAY_ENTRE_CHUNKS_MS = 0;
 
+        // ── Throttling para UI ─────────────────────────────────────────────
+        private DateTime _ultimoReporte = DateTime.MinValue;
+        private double _ultimoProgresoReportado = 0;
+
+        private void ReportarProgreso()
+        {
+            if ((DateTime.Now - _ultimoReporte).TotalMilliseconds > 100 || Math.Abs(Progreso - _ultimoProgresoReportado) >= 1.0 || Progreso >= 100.0)
+            {
+                ProgresoArchivo?.Invoke(Indice, Progreso);
+                _ultimoReporte = DateTime.Now;
+                _ultimoProgresoReportado = Progreso;
+            }
+        }
+
+
         public ClaseTransferenciaArchivo(int indice, Action<byte[], string> escribirTrama)
         {
             Indice = indice;
@@ -294,15 +309,14 @@ namespace winProyComunicacion
 
         private void EnviarTrama(byte[] cabecera, int datosLength)
         {
-            // tramaEnvioArchivo already has the data in [5..5+datosLength]
-            // Fill the rest with '@'
+            byte[] tramaCopia = new byte[1024];
+            Array.Copy(cabecera, 0, tramaCopia, 0, cabecera.Length);
+            Array.Copy(tramaEnvioArchivo, 5, tramaCopia, 5, datosLength);
             for (int i = 5 + datosLength; i < 1024; i++)
             {
-                tramaEnvioArchivo[i] = 64;
+                tramaCopia[i] = 64; // '@'
             }
-            // Copy header to tramaEnvioArchivo
-            Array.Copy(cabecera, 0, tramaEnvioArchivo, 0, cabecera.Length);
-            _escribirTrama(tramaEnvioArchivo, Destinatario);
+            _escribirTrama(tramaCopia, Destinatario);
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -376,16 +390,28 @@ namespace winProyComunicacion
                 long avanceEnvio = 0;
                 byte[] cabA = Encoding.UTF8.GetBytes("A" + Indice + "000");
 
-                while (TamañoArchivo - avanceEnvio >= 1019)
+                while (avanceEnvio < TamañoArchivo)
                 {
                     if (_cancelado) break;
 
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, 1019);
-                    avanceEnvio += 1019;
+                    long restante = TamañoArchivo - avanceEnvio;
+                    int aLeer = restante >= 1019 ? 1019 : (int)restante;
+
+                    int bytesLeidosTotales = 0;
+                    while (bytesLeidosTotales < aLeer)
+                    {
+                        int leido = leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5 + bytesLeidosTotales, aLeer - bytesLeidosTotales);
+                        if (leido == 0) break; // EOF inesperado
+                        bytesLeidosTotales += leido;
+                    }
+                    
+                    if (bytesLeidosTotales == 0) break;
+
+                    avanceEnvio += bytesLeidosTotales;
                     BytesTransferidos = avanceEnvio;
 
-                    EnviarTrama(cabA, 1019);
-                    ProgresoArchivo?.Invoke(Indice, Progreso);
+                    EnviarTrama(cabA, bytesLeidosTotales);
+                    ReportarProgreso();
                     Thread.Sleep(DELAY_ENTRE_CHUNKS_MS);
                 }
 
@@ -395,15 +421,6 @@ namespace winProyComunicacion
                     return;
                 }
 
-                // 3. Último trozo
-                int ultTam = (int)(TamañoArchivo - avanceEnvio);
-                if (ultTam > 0)
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, ultTam);
-
-                byte[] cabUlt = Encoding.UTF8.GetBytes("A" + Indice + "000");
-                EnviarTrama(cabUlt, ultTam);
-
-                BytesTransferidos += ultTam;
                 Estado = EstadoTransferencia.Completado;
                 TransferenciaCompletada?.Invoke(Indice, NombreArchivo);
             }
@@ -467,16 +484,28 @@ namespace winProyComunicacion
                 long avanceEnvio = BytesTransferidos;
                 byte[] cabA = Encoding.UTF8.GetBytes("A" + Indice + "000");
 
-                while (TamañoArchivo - avanceEnvio >= 1019)
+                while (avanceEnvio < TamañoArchivo)
                 {
                     if (_cancelado) break;
 
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, 1019);
-                    avanceEnvio += 1019;
+                    long restante = TamañoArchivo - avanceEnvio;
+                    int aLeer = restante >= 1019 ? 1019 : (int)restante;
+
+                    int bytesLeidosTotales = 0;
+                    while (bytesLeidosTotales < aLeer)
+                    {
+                        int leido = leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5 + bytesLeidosTotales, aLeer - bytesLeidosTotales);
+                        if (leido == 0) break; // EOF inesperado
+                        bytesLeidosTotales += leido;
+                    }
+                    
+                    if (bytesLeidosTotales == 0) break;
+
+                    avanceEnvio += bytesLeidosTotales;
                     BytesTransferidos = avanceEnvio;
 
-                    EnviarTrama(cabA, 1019);
-                    ProgresoArchivo?.Invoke(Indice, Progreso);
+                    EnviarTrama(cabA, bytesLeidosTotales);
+                    ReportarProgreso();
                     Thread.Sleep(DELAY_ENTRE_CHUNKS_MS);
                 }
 
@@ -486,14 +515,6 @@ namespace winProyComunicacion
                     return;
                 }
 
-                int ultTam = (int)(TamañoArchivo - avanceEnvio);
-                if (ultTam > 0)
-                    leyendoTramaArchivoEnvio.Read(tramaEnvioArchivo, 5, ultTam);
-
-                byte[] cabUlt = Encoding.UTF8.GetBytes("A" + Indice + "000");
-                EnviarTrama(cabUlt, ultTam);
-
-                BytesTransferidos += ultTam;
                 Estado = EstadoTransferencia.Completado;
                 TransferenciaCompletada?.Invoke(Indice, NombreArchivo);
             }
@@ -606,7 +627,7 @@ namespace winProyComunicacion
                 EscribiendoTramaArchivoRecepcion.Write(trama, 5, bytesAEscribir);
                 BytesTransferidos += bytesAEscribir;
 
-                ProgresoArchivo?.Invoke(Indice, Progreso);
+                ReportarProgreso();
 
                 if (BytesTransferidos >= TamañoArchivoRecepcion)
                 {
